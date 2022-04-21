@@ -1,0 +1,27 @@
+{
+  "name": "question-and-answer-api",
+  "version": "1.0.0",
+  "description": "Creating RESTful API to use PostgreSQL to serve the Question and Answer part of SuperNova retail shopping application",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "serve": "nodemon app.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wendyzhang7/Question-and-Answer-API.git"
+  },
+  "author": "WendyZhang",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/wendyzhang7/Question-and-Answer-API/issues"
+  },
+  "homepage": "https://github.com/wendyzhang7/Question-and-Answer-API#readme",
+  "dependencies": {
+    "express": "^4.17.3",
+    "pg": "^8.7.3"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.15"
+  }
+}
