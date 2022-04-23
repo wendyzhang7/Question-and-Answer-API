@@ -9,46 +9,122 @@ const pool = new Pool({
 
 const getQA = (request, response) => {
   const id = parseInt(request.params.id);
-  console.log('this is req.params.id', request.params.id);
-  var queryStr = `select questions.id as question_id, questions.product_id, questions.body as question_body, questions.date_written as question_date, questions.asker_name, questions.reported, questions.helpful as question_helpfulness, answers.id as answer_id, answers.body, answers.date_written as date, answers.answerer_name, answers.helpful as helpfulness, answers_photos.id as photo_id, answers_photos.url as url
-  from questions inner join answers
-        on questions.id = answers.question_id
-        inner join answers_photos
-        on answers.id = answers_photos.answer_id
-        where product_id =  $1
-        order by product_id, question_id, answer_id
+
+  var queryStr = `select jsonb_agg(results) from (select jsonb_build_object('question_id', id, 'question_body', body, 'question_date', date_written, 'asker_name', asker_name, 'question_helpfullness', helpful, 'reported', reported,
+  'answers', jsonb_agg(allanswers)
+) as results
+from ( select A.*, jsonb_build_object(B.id, jsonb_build_object('id', B.id, 'body', B.body, 'date', B.date_written, 'answerer_name', B.answerer_name, 'helpfulness', B.helpful)) as allanswers
+
+from questions A
+inner join answers B
+on A.id = B.question_id
+
+where A.product_id = $1) k
+group by id, body, date_written, asker_name, helpful, reported
+) m
  `;
 
   pool.query(queryStr, [id], (error, results) => {
     if (error) {
       throw error;
-      console.log('error at getQA', error);
     }
-    console.log('this is results.rows', results.rows);
-    // console.log('this is results', results);
-    var test = {
-        product_id:results.rows[0].product_id,
-        results: [{
-          question_id: 0,
-          question_body: '',
-          question_date: '',
-          asker_name: '',
-          question_helpfulness: 0,
-          reported: false,
-          answers: {
-          }
-        }]
-      };
 
-      for (var i=0; i<results.rows.length; i++) {
+    var newResults = results.rows[0].jsonb_agg;
+    var answers = results.rows[0].jsonb_agg[0].answers;
+    var answerObj = {};
 
+    answers.forEach((element, index) => {
+      for (var property in element) {
+        answerObj[property] = element[property];
       }
-    response.status(200).json(results.rows)
-    // response.status(200).json(test)
+      newResults[index].answers = answerObj;
+    })
+
+    // newResults[answers] = answerObj;
+    var test = {
+      product_id: id,
+      results: newResults
+    };
+
+    response.status(200).json(test)
+    // console.log('answerObj', answerObj);
+    // console.log('newResults', newResults);
+    // console.log('results', results.rows);
   })
 }
 
 
+const getSpecificAnswers = (request, response) => {
+  const question_id = parseInt(request.params.question_id);
+  var queryStr = `select jsonb_agg(results) from (select jsonb_build_object('answer_id', id, 'body', body, 'date', date_written, 'answerer_name', answerer_name, 'helpfullness', helpful,
+  'photos', jsonb_agg(alphotos)
+) as results
+
+from ( select A.*, jsonb_build_object('id', B.id, 'url', B.url ) as alphotos
+
+from answers A
+inner join answers_photos B
+on A.id = B.answer_id
+
+where A.question_id = $1) k
+group by id, body, date_written, answerer_name, helpful) m
+ `;
+
+  pool.query(queryStr, [question_id], (error, results) => {
+    // console.log('results', results.rows);
+    if (error) {
+      throw error;
+      // console.log('err at getanswer', error);
+    }
+    var newResult = results.rows[0].jsonb_agg;
+    if (newResult) {
+      newResult.forEach((element, index) => {
+        // console.log(element.date);
+        var formattedDate = new Date(Number(element.date));
+        element.date = formattedDate;
+      })
+    }
+
+    var output = {
+      question: question_id,
+      results: newResult || [],
+    }
+    // console.log(new Date(Number(results.rows[0].jsonb_agg[0].date)))
+
+    response.status(200).json(output);
+    // console.log('answerObj', answerObj);
+    // console.log('newResults', newResults);
+    // console.log('newResult', newResult);
+  })
+}
+
+const askQuestion = (request, response) => {
+  const {body, name, email, product_id} = request.body;
+
+  pool.query('INSERT INTO users (body, name, email, product_id) VALUES ($1, $2, $3, $4)', [body, name, email, product_id], (error, results) => {
+    if (error) {
+      throw error
+    }
+    response.status(201).send(`Question added with ID: ${results.insertId}`)
+  })
+
+}
+
+const answerQuestion = (request, response) => {
+  const {body, name, email, photos, product_id} = request.body;
+
+  pool.query('INSERT INTO users (body, name, email, photos, product_id) VALUES ($1, $2, $3, $4, $5)', [body, name, email, photos, product_id], (error, results) => {
+    if (error) {
+      throw error
+    }
+    response.status(201).send(`Answered added with ID: ${results.insertId}`)
+  })
+
+}
+
 module.exports = {
   getQA,
+  getSpecificAnswers,
+  askQuestion,
+  answerQuestion
 }

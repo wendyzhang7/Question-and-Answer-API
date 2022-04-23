@@ -17,7 +17,9 @@ app.get('/', (request, response) => {
 })
 
 app.get('/qa/:id', db.getQA);
-
+app.get('/qa/:question_id/answers', db.getSpecificAnswers);
+app.post('/qa/:id', db.askQuestion);
+app.post('/qa/:question_id/answers', db.answerQuestion);
 
 app.listen(port, () => {
   console.log(`App running on port ${port}.`)
