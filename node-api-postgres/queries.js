@@ -9,7 +9,7 @@ const pool = new Pool({
 
 const getQA = (request, response) => {
   const id = parseInt(request.params.id);
-
+  // console.log('req at getQA', request);
   var queryStr = `select jsonb_agg(results) from (select jsonb_build_object('question_id', id, 'question_body', body, 'question_date', date_written, 'asker_name', asker_name, 'question_helpfullness', helpful, 'reported', reported,
   'answers', jsonb_agg(allanswers)
 ) as results
@@ -27,6 +27,7 @@ group by id, body, date_written, asker_name, helpful, reported
   pool.query(queryStr, [id], (error, results) => {
     if (error) {
       throw error;
+      response.status(404).send('error at getquestino')
     }
 
     var newResults = results.rows[0].jsonb_agg;
@@ -74,6 +75,7 @@ group by id, body, date_written, answerer_name, helpful) m
     // console.log('results', results.rows);
     if (error) {
       throw error;
+      response.status(404).send('error at getanswer');
       // console.log('err at getanswer', error);
     }
     var newResult = results.rows[0].jsonb_agg;
@@ -103,7 +105,8 @@ const askQuestion = (request, response) => {
 
   pool.query('INSERT INTO users (body, name, email, product_id) VALUES ($1, $2, $3, $4)', [body, name, email, product_id], (error, results) => {
     if (error) {
-      throw error
+      throw error;
+      response.status(404).send('error at askQuestion');
     }
     response.status(201).send(`Question added with ID: ${results.insertId}`)
   })
@@ -115,7 +118,8 @@ const answerQuestion = (request, response) => {
 
   pool.query('INSERT INTO users (body, name, email, photos, product_id) VALUES ($1, $2, $3, $4, $5)', [body, name, email, photos, product_id], (error, results) => {
     if (error) {
-      throw error
+      throw error;
+      response.status(404).send('error at answerQuestion');
     }
     response.status(201).send(`Answered added with ID: ${results.insertId}`)
   })
