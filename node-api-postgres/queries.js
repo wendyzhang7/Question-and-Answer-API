@@ -1,9 +1,9 @@
 const Pool = require('pg').Pool;
 const pool = new Pool({
-  user: '',
-  host: 'localhost',
-  database: 'postgres',
-  password: '',
+  user: 'postgres',
+  host: '3.21.220.168',
+  database: 'qa',
+  password: '12345',
   port: 5432,
 });
 
@@ -130,5 +130,9 @@ module.exports = {
   getQA,
   getSpecificAnswers,
   askQuestion,
-  answerQuestion
+  answerQuestion,
+  // markQAsHelpful,
+  // reportQuestion,
+  // markAnsAsHelpful,
+  // reportAns
 }
